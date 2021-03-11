@@ -2,14 +2,14 @@ from tqdm import tqdm
 import os
 import shutil
 
-dir_name = './idao/idao_dataset/'
+dir_name = './data/classed_nrj_train/'
 for type_dir in ['ER', 'NR']:
     source_dir = os.path.join(dir_name + type_dir)
     for class_name in [1, 3, 6, 10, 20, 30]:
         os.makedirs(os.path.join(source_dir, str(class_name)), exist_ok=True)
 
 for type_dir in ['ER', 'NR']:
-    source_dir = os.path.join(dir_name + '/train/', type_dir)
+    source_dir = os.path.join(dir_name + './data/train/', type_dir)
     for i, file_name in enumerate(tqdm(os.listdir(source_dir))):
         if file_name[0] == '.':
             continue

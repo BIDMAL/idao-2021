@@ -26,6 +26,7 @@ def load_data(public_test_dir, private_test_dir):
         img = tr.numpy()
         X_crp.append(img.flatten())
         fnames.append(filename.split('.')[0])
+    X_crp = np.array(X_crp)
     return X_crp, fnames
 
 

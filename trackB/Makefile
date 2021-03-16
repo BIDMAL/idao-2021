@@ -1,6 +1,6 @@
 all: build
 
 build:
-	echo "PING!"
+	pip install Pillow
 run:
-	bash run.sh
+	${PYTHON} generate_submission.py

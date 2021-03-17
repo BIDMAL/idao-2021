@@ -1,6 +1,6 @@
 all: build
-
+	
 build:
-	echo "PING!"
+	echo "I can see this in the log!"
 run:
 	bash run.sh

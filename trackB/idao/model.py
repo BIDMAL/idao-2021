@@ -25,12 +25,12 @@ class SimpleConv(pl.LightningModule):
         super().__init__()
         self.mode = mode
         self.layer1 = nn.Sequential(
-                    nn.Conv2d(1, 16, kernel_size=5, stride=1, padding=2),
-                    nn.BatchNorm2d(16),
-                    nn.ReLU(),
-                    nn.MaxPool2d(kernel_size=19, stride=7),
-                    nn.Flatten(),
-                )
+            nn.Conv2d(1, 16, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=19, stride=7),
+            nn.Flatten(),
+        )
 
         self.drop_out = nn.Dropout()
 
@@ -38,10 +38,9 @@ class SimpleConv(pl.LightningModule):
         self.fc2 = nn.Linear(500, 2)  # for classification
         self.fc3 = nn.Linear(500, 1)  # for regression
 
-
         self.stem = nn.Sequential(
             self.layer1, self.drop_out, self.fc1,
-            )
+        )
         if self.mode == "classification":
             self.classification = nn.Sequential(self.stem, self.fc2)
         else:

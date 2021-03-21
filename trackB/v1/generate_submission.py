@@ -19,8 +19,8 @@ from idao.model import SimpleConv
 from idao.utils import delong_roc_variance
 
 
-dict_pred = defaultdict(list)
 
+dict_pred = defaultdict(list)
 
 def make_csv(mode, dataloader, checkpoint_path, cfg):
     torch.multiprocessing.set_sharing_strategy("file_system")
@@ -52,7 +52,7 @@ def main(cfg):
     )
 
     dataset_dm.prepare_data()
-    # dataset_dm.setup()
+    #dataset_dm.setup()
     dl = dataset_dm.test_dataloader()
 
     for mode in ["regression", "classification"]:

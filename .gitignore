@@ -1,6 +1,9 @@
 *.png
 .vscode/
-data/
+*.png
+/data/
+/trackB/tests/
+/trackB/trains/
 catboost_info/
 
 # Byte-compiled / optimized / DLL files

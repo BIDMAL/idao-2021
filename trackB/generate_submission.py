@@ -1,64 +1,73 @@
+import configparser
+import gc
+import logging
+import pathlib as path
+import sys
+from collections import defaultdict
+from itertools import chain
+from collections import defaultdict
+
+import matplotlib.pyplot as plt
 import numpy as np
-import os
 import pandas as pd
-import torchvision.transforms as T
-import torchvision.transforms.functional as F
-from PIL import Image
-from catboost import CatBoostClassifier
+import scikitplot as skplt
+import torch
+from more_itertools import bucket
+
+from idao.data_module import IDAODataModule
+from idao.model import SimpleConv
+from idao.utils import delong_roc_variance
 
 
-def load_data(public_test_dir, private_test_dir):
-    X_crp = []
-    fnames = []
-    for filename in os.listdir(public_test_dir):
-        img = Image.open(public_test_dir + filename)
-        tensor = F.to_tensor(img)
-        tr = F.crop(tensor, 192, 192, 192, 192)
-        tr = F.resize(tr, [64, 64])
-        img = (tr.numpy()*255).astype(np.uint8)
-        X_crp.append(img.flatten())
-        fnames.append(filename.split('.')[0])
-    for filename in os.listdir(private_test_dir):
-        img = Image.open(private_test_dir + filename)
-        tensor = F.to_tensor(img)
-        tr = F.crop(tensor, 192, 192, 192, 192)
-        tr = F.resize(tr, [64, 64])
-        img = (tr.numpy()*255).astype(np.uint8)
-        X_crp.append(img.flatten())
-        fnames.append(filename.split('.')[0])
-    X_crp = np.array(X_crp)
-    return X_crp, fnames
+
+dict_pred = defaultdict(list)
+
+def make_csv(mode, dataloader, checkpoint_path, cfg):
+    torch.multiprocessing.set_sharing_strategy("file_system")
+    logging.info("Loading checkpoint")
+    model = SimpleConv.load_from_checkpoint(checkpoint_path, mode=mode)
+    model = model.cpu().eval()
+
+    if mode == "classification":
+        logging.info("Classification model loaded")
+    else:
+        logging.info("Regression model loaded")
+
+    for _, (img, name) in enumerate(iter(dataloader)):
+        if mode == "classification":
+            dict_pred["id"].append(name[0].split('.')[0])
+            output = (0 if torch.round(model(img)["class"].detach()[0][0]) == 0 else 1)
+            dict_pred["classification_predictions"].append(output)
+
+        else:
+            output = model(img)["energy"].detach()
+            dict_pred["regression_predictions"].append(output[0][0].item())
 
 
-def load_models(clf2_path, clf6_path):
-    clf2_cat = CatBoostClassifier()
-    clf2_cat.load_model(clf2_path)
-    clf6_cat = CatBoostClassifier()
-    clf6_cat.load_model(clf6_path)
-    return clf2_cat, clf6_cat
+def main(cfg):
+    PATH = path.Path(cfg["DATA"]["DatasetPath"])
 
+    dataset_dm = IDAODataModule(
+        data_dir=PATH, batch_size=64, cfg=cfg
+    )
 
-def make_predictions(X_crp, cls2, cls6):
-    preds2 = cls2.predict(X_crp)
-    preds6 = cls6.predict(X_crp)
-    return preds2, preds6
+    dataset_dm.prepare_data()
+    #dataset_dm.setup()
+    dl = dataset_dm.test_dataloader()
 
+    for mode in ["regression", "classification"]:
+        if mode == "classification":
+            model_path = cfg["REPORT"]["ClassificationCheckpoint"]
+        else:
+            model_path = cfg["REPORT"]["RegressionCheckpoint"]
 
-def make_csv(fnames, preds2, preds6):
-    preds6 = np.stack(preds6, axis=1)[0]
-    conv_six = {0: 1, 1: 3, 2: 6, 3: 10, 4: 20, 5: 30}
-    df = pd.DataFrame(fnames, columns=['id'])
-    df['classification_predictions'] = preds2
-    df['regression_predictions'] = list(map(lambda x: conv_six[x], preds6))
-    df.to_csv('submission.csv', index=False)
+        make_csv(mode, dl, model_path, cfg=cfg)
+
+    data_frame = pd.DataFrame(dict_pred, columns=["id", "classification_predictions", "regression_predictions"])
+    data_frame.to_csv('submission.csv', index=False, header=True)
 
 
 if __name__ == "__main__":
-    public_test_dir = './tests/public_test/'
-    private_test_dir = './tests/private_test/'
-    clf2_path = './saved_models/cat2.cbm'
-    clf6_path = './saved_models/cat6.cbm'
-    X_crp, fnames = load_data(public_test_dir, private_test_dir)
-    cls2, cls6 = load_models(clf2_path, clf6_path)
-    preds2, preds6 = make_predictions(X_crp, cls2, cls6)
-    make_csv(fnames, preds2, preds6)
+    config = configparser.ConfigParser()
+    config.read("./config.ini")
+    main(cfg=config)

@@ -1,6 +1,6 @@
 all: build
-
+	
 build:
-	pip install Pillow
+	echo "I can see this in the log!"
 run:
-	${PYTHON} generate_submission.py
+	bash run.sh

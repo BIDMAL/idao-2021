@@ -40,6 +40,7 @@ def make_csv(mode, dataloader, checkpoint_path, cfg):
     else:
         logging.info("Regression model loaded")
 
+    pred2class = [1.0, 10.0, 20.0, 3.0, 30.0, 6.0]
     # здесь заменил бейзлайн-предсказания на наши
     with torch.no_grad():
         for _, (img, name) in enumerate(iter(dataloader)):
@@ -50,9 +51,9 @@ def make_csv(mode, dataloader, checkpoint_path, cfg):
                 _, predicted = torch.max(output.data, 1)
                 dict_pred["classification_predictions"].append(predicted)
             else:
-
                 output = net_regression(img)
                 _, predicted = torch.max(output.data, 1)
+                predicted = [pred2class[pred] for pred in predicted]
                 dict_pred["regression_predictions"].append(predicted)
 
 

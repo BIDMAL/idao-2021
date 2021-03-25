@@ -25,15 +25,12 @@ def test_variance(target, predictions):
 def run_test(mode, dataloader, checkpoint_path, cfg):
     torch.multiprocessing.set_sharing_strategy("file_system")
     logging.info("Loading checkpoint")
-    # добавил device
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     # загрузка моделей
     net_regression = torch.load('./idao/IDAO_nn_ENERJY_v_2_1.pt')
-    net_regression = net_regression.to(device)
     net_regression.eval()
 
     net_classification = torch.load('./idao//IDAO_nn_NR_ER_v_2_1.pt')
-    net_classification = net_classification.to(device)
     net_classification.eval()
     #model = SimpleConv.load_from_checkpoint(checkpoint_path, mode=mode)
     #model = model.cpu().eval()
